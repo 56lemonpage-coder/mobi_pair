@@ -36,10 +36,10 @@ row('yc',745,L7);row('ya1',797,A5);row('ya2',823,A2);row('yp1',863,P4);row('yp2'
 const TX=[['x_s',530,274,170],['x_w',432,515,270],['x_m',432,956,270]];
 const TB=[['전투력',361],['생활력',423],['매력',485]],T=[false,false,false];
 const F=[{c:[953.3,309.9],w:415,h:526,a:7*Math.PI/180},{c:[1040.4,811.2],w:573,h:474,a:-6.4*Math.PI/180}];
-const Q=[[757,0],[1215,52],[1143,620],[693,555]];
+const Q=[[760,-3],[1217,53],[1148.5,622.5],[692,567.5]];
 const P=[{img:null,z:1,x:0,y:0},{img:null,z:1,x:0,y:0}];
 const bg=new Image(),og=new Image();let n=0;const ld=()=>{if(++n==2)draw()};bg.onload=ld;og.onload=ld;bg.src=BGC;og.src=BG;
-function ph(i,ex){const f=F[i],p=P[i];cx.save();cx.translate(...f.c);cx.rotate(f.a);cx.beginPath();cx.rect(-f.w/2,-f.h/2,f.w,f.h);cx.clip();
+function ph(i,ex){const f=F[i],p=P[i];cx.save();cx.translate(...f.c);cx.rotate(f.a);cx.beginPath();cx.rect(-f.w/2+1,-f.h/2+1,f.w-2,f.h-2);cx.clip();
  if(p.img){const s=Math.max(f.w/p.img.width,f.h/p.img.height)*p.z,w=p.img.width*s,h=p.img.height*s;cx.drawImage(p.img,-w/2+p.x,-h/2+p.y,w,h)}
  else if(!ex){cx.fillStyle='rgba(120,120,120,.6)';cx.font='500 20px "Noto Sans KR",sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('클릭하거나 사진을 끌어놓기',0,0)}
  cx.restore()}
@@ -65,22 +65,23 @@ TB.forEach(([n],i)=>{const d=document.createElement('div');d.style.width='100%';
  $('fi'+i).onchange=e=>{if(e.target.files[0])load(i,e.target.files[0]);e.target.value=''};
  ['z','x','y'].forEach(k=>$('s'+i+k).oninput=e=>{P[i][k]=+e.target.value;draw()})});
 function sync(i){['z','x','y'].forEach(k=>$('s'+i+k).value=P[i][k])}
-function load(i,file){const im=new Image();im.onload=()=>{P[i]={img:im,z:1,x:0,y:0};sync(i);draw()};im.src=URL.createObjectURL(file)}
+function load(i,file){const fr=new FileReader();fr.onerror=()=>alert('사진을 읽지 못했어요. 다른 사진으로 다시 시도해 주세요.');fr.onload=()=>{const im=new Image();im.onload=()=>{P[i]={img:im,z:1,x:0,y:0};sync(i);draw()};im.onerror=()=>alert('이 사진 형식은 불러올 수 없어요. JPG 또는 PNG로 변환해 주세요. (iPhone HEIC 등)');im.src=fr.result};fr.readAsDataURL(file)}
 // 캔버스 상호작용
 function pos(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
 function inF(i,px,py){const f=F[i],dx=px-f.c[0],dy=py-f.c[1],c=Math.cos(f.a),s=Math.sin(f.a);const lx=dx*c+dy*s,ly=-dx*s+dy*c;return Math.abs(lx)<=f.w/2&&Math.abs(ly)<=f.h/2}
 const fAt=(x,y)=>inF(0,x,y)?0:inF(1,x,y)?1:-1;
-let dr=null;
+let dr=null,pend=-1;
 cv.addEventListener('pointerdown',e=>{const[x,y]=pos(e);
  for(const[k,cx_,cy] of C){if(Math.abs(x-cx_)<=15&&Math.abs(y-cy)<=12){S[k]=!S[k];draw();return}}
  if(x>1126)for(let i=0;i<3;i++){if(Math.abs(y-TB[i][1])<=25){T[i]=!T[i];$('tb'+i).checked=T[i];draw();return}}
  const i=fAt(x,y);if(i<0)return;
- if(!P[i].img){$('fi'+i).click();return}
+ if(!P[i].img){pend=i;return}
  if(e.pointerType==='touch')return;
  dr={i,x,y};cv.setPointerCapture(e.pointerId)});
 cv.addEventListener('pointermove',e=>{if(!dr)return;const[x,y]=pos(e),f=F[dr.i],dx=x-dr.x,dy=y-dr.y,c=Math.cos(f.a),s=Math.sin(f.a);
  P[dr.i].x+=dx*c+dy*s;P[dr.i].y+=-dx*s+dy*c;dr.x=x;dr.y=y;sync(dr.i);draw()});
 cv.addEventListener('pointerup',()=>dr=null);
+cv.addEventListener('click',()=>{if(pend>=0){const i=pend;pend=-1;$('fi'+i).click()}});
 cv.addEventListener('wheel',e=>{const[x,y]=pos(e),i=fAt(x,y);if(i<0||!P[i].img)return;e.preventDefault();
  P[i].z=Math.min(5,Math.max(1,P[i].z*(e.deltaY<0?1.06:1/1.06)));sync(i);draw()},{passive:false});
 cv.addEventListener('dragover',e=>e.preventDefault());
